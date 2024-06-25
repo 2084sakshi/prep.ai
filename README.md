@@ -2,6 +2,20 @@
 
 🚀 **Welcome to Prep.ai**, your ultimate companion in the journey to land your dream job! Prep.ai offers a suite of tools designed to help you achieve career success. This README file provides an overview of the application and instructions for getting started.
 
+## Demo
+
+
+
+
+
+https://github.com/2084sakshi/prep.ai/assets/111236076/2a310859-e661-47c1-8504-88075e2857e6
+
+
+
+
+
+
+
 ## Features
 
 1. **Roadmap Generator 🗺️**
