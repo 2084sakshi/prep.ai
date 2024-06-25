@@ -39,25 +39,21 @@ def get_text(text):
         return None
 
 def get_vector(text_chunks):
-    try:
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
-        vector_store.save_local("faiss_index")
-        st.success("Vectorization successful")
-    except Exception as e:
-        st.error(f"Error vectorizing text: {e}")
-
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
+    vector_store.save_local("faiss_index")
+    
 def get_converse():
     try:
         prompttemplate = """
         You are a professional and experienced resume analyzer. Given the context of a resume, provide a detailed analysis including the following aspects:
 
 1. **Resume Score**: Develop a scoring system based on various factors like keyword matching, skill strength, and formatting. Provide a quick overall assessment of the resume's effectiveness.
-2. Top 3 Job Roles: Identify the top 3 job roles that the candidate is best suited for based on their experience, skills, and qualifications.
-3. Conclusion/Summary: Provide a concise summary of the overall resume, summarizing the candidate's potential and the key takeaways from the analysis.
+3. Top 3 Job Roles: Identify the top 3 job roles that the candidate is best suited for based on their experience, skills, and qualifications.
+3.Conclusion/Summary: Provide a concise summary of the overall resume, summarizing the candidate's potential and the key takeaways from the analysis.
 4. Good Points: Highlight the strengths of the resume, including notable achievements, relevant skills, and well-presented sections.
 5. Areas of Improvement: Identify any weaknesses or areas that need improvement, such as missing information, unclear descriptions, or formatting issues. Provide specific suggestions on how to improve the resume, including tips on better structuring, enhancing descriptions, and adding relevant information.
-6. Recommended Skills to Learn: Considering the candidate's current skillset and potential career paths suggested in point 1, recommend additional skills that would be valuable to learn. If possible, include relevant learning resources (online courses, tutorials, certifications) for each recommended skill.
+6.Recommended Skills to Learn: Considering the candidate's current skillset and potential career paths suggested in point 1, recommend additional skills that would be valuable to learn. If possible, include relevant learning resources (online courses, tutorials, certifications) for each recommended skill.
 
         Context:\n {context}\n
         Answer: """
@@ -73,8 +69,8 @@ def get_converse():
 
 def analyze(text_chunks):
     try:
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+        embed = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        new_db = FAISS.load_local("faiss_index", embed, allow_dangerous_deserialization=True)
         chain = get_converse()
         docs = new_db.similarity_search(text_chunks)
         if chain:
@@ -85,6 +81,7 @@ def analyze(text_chunks):
                 st.error("Error analyzing resume: No valid response")
     except Exception as e:
         st.error(f"Error analyzing resume: {e}")
+
 
 def main():
     st.title("Resume Checker")
@@ -101,6 +98,7 @@ def main():
                 chunk = get_text(text)
                 if chunk:
                     get_vector(chunk)
+                    st.success("Resume uploaded successfully")
                     analyze(chunk)
         else:
             st.warning("Please upload a file")
