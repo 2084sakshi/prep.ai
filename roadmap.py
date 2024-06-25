@@ -27,13 +27,13 @@ class PDF(FPDF):
 
     def chapter_body(self, body):
         self.set_font('Arial', '', 12)
-        self.multi_cell(0, 10, body)
+        self.multi_cell(0, 5, body)
         self.ln(2)
 
     def chapter_list(self, items):
         self.set_font('Arial', '', 12)
         for item in items:
-            self.cell(0, 10, f'- {item}', 0, 1, 'L')
+            self.cell(0, 5, f'- {item}', 0, 1, 'L')
         self.ln(2)
 
 def sanitize_text(text):
