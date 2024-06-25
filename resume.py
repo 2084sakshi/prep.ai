@@ -70,23 +70,24 @@ def get_converse():
     except Exception as e:
         st.error(f"Error creating conversational chain: {e}")
         return None
-
 def analyze(text_chunks):
     try:
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
         chain = get_converse()
-        docs = new_db.similarity_search(text_chunks)
+        
         if chain:
-            # Convert each chunk to string if necessary
-            docs = [str(doc) for doc in docs]
-            response = chain.invoke({"input_documents": docs, "question": text_chunks})
-            if response and "output_text" in response:
-                st.write(response["output_text"])
-            else:
-                st.error("Error analyzing resume: No valid response")
+            for chunk in text_chunks:
+                chunk_str = str(chunk)  # Ensure each chunk is converted to string
+                docs = new_db.similarity_search(chunk_str)
+                response = chain.invoke({"input_documents": docs, "question": chunk_str})
+                if response and "output_text" in response:
+                    st.write(response["output_text"])
+                else:
+                    st.error("Error analyzing resume: No valid response")
     except Exception as e:
         st.error(f"Error analyzing resume: {e}")
+
 
 def main():
     st.title("Resume Checker")
