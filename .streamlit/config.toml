@@ -1,0 +1,9 @@
+[server]
+headless = true
+port = $PORT
+enableCORS = false
+
+[theme]
+base="light"
+primaryColor="#c19ad9"
+backgroundColor="white"
