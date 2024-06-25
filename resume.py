@@ -75,10 +75,10 @@ def analyze(text_chunks):
         docs = new_db.similarity_search(text_chunks)
         if chain:
             response = chain.invoke({"input_documents": docs, "question": text_chunks})
-            if response:
+            if response and "output_text" in response:
                 st.write(response["output_text"])
             else:
-                st.error("Error analyzing resume")
+                st.error("Error analyzing resume: No valid response")
     except Exception as e:
         st.error(f"Error analyzing resume: {e}")
 

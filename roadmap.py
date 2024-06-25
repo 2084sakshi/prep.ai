@@ -1,9 +1,9 @@
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import streamlit as st
 from fpdf import FPDF
 from io import BytesIO
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -27,13 +27,13 @@ class PDF(FPDF):
 
     def chapter_body(self, body):
         self.set_font('Arial', '', 12)
-        self.multi_cell(0, 4, body)
+        self.multi_cell(0, 10, body)
         self.ln(2)
 
     def chapter_list(self, items):
         self.set_font('Arial', '', 12)
         for item in items:
-            self.cell(0, 4, f'- {item}', 0, 1, 'L')
+            self.cell(0, 10, f'- {item}', 0, 1, 'L')
         self.ln(2)
 
 def sanitize_text(text):
@@ -50,7 +50,6 @@ def sanitize_text(text):
     for search, replace in replacements.items():
         text = text.replace(search, replace)
     return text
-
 
 def generate_pdf(content):
     pdf = PDF()
@@ -72,7 +71,6 @@ def generate_pdf(content):
             pdf.chapter_body(line.strip())
 
     return pdf.output(dest='S').encode('latin1')
-
 
 def main():
     st.title("Roadmap Generator 🛣️")
@@ -150,6 +148,7 @@ def main():
         - Recommend continuous learning opportunities for {input}, including advanced courses and industry-recognized certifications.
         - Suggest ways to stay updated with industry news and developments in {input}.
     """
+
     if 'response' not in st.session_state:
         st.session_state.response = ""
 
@@ -167,7 +166,7 @@ def main():
     # Display the response if available
     if st.session_state.response:
         res = st.session_state.response
-        
+       
 
         if st.button('Generate PDF'):
             try:
@@ -182,7 +181,5 @@ def main():
                 st.error(f"An error occurred while generating the PDF: {str(e)}")
         st.markdown(res, unsafe_allow_html=True)
 
-
-        
 if __name__ == "__main__":
     main()
