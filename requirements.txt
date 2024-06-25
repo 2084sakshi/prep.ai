@@ -23,6 +23,8 @@ distro
 Django
 exceptiongroup
 faiss-cpu
+fdpf
+fpdf2
 filelock
 Flask
 Flask-SQLAlchemy
