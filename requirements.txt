@@ -105,6 +105,7 @@ pypdf
 PyPDF2
 pypng
 python-dateutil
+python-dotenv
 pytz
 PyYAML
 qrcode
