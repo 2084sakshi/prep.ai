@@ -74,6 +74,7 @@ def analyze(text_chunks):
         chain = get_converse()
         docs = new_db.similarity_search(text_chunks)
         if chain:
+            docs = [str(doc) for doc in docs]
             response = chain.invoke({"input_documents": docs, "question": text_chunks})
             if response and "output_text" in response:
                 st.write(response["output_text"])
