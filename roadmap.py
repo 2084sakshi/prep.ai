@@ -70,8 +70,10 @@ def generate_pdf(content):
         else:
             pdf.chapter_body(line.strip())
 
-    return pdf.output(dest='S').encode('latin1')
-
+    buffer = BytesIO()
+    pdf.output(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
 def main():
     st.title("Roadmap Generator 🛣️")
     st.write("GENERATE A ROADMAP FOR YOUR CAREER !")
