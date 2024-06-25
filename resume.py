@@ -43,7 +43,7 @@ def get_vector(text_chunks):
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
         vector_store.save_local("faiss_index")
-        st.success("Vectorization successful")
+    
     except Exception as e:
         st.error(f"Error vectorizing text: {e}")
 
@@ -104,6 +104,7 @@ def main():
                 chunk = get_text(text)
                 if chunk:
                     get_vector(chunk)
+                    st.success("Resume uploaded successfully")
                     analyze(chunk)
         else:
             st.warning("Please upload a file")
