@@ -2,6 +2,15 @@ import streamlit as st
 import roadmap
 import resume
 import ats
+import tech
+import interview
+
+# Set page configuration at the very beginning
+st.set_page_config(
+    page_title="prep.ai",
+    page_icon="🎓",
+    layout="wide",
+)
 
 class MultiApp:
     def __init__(self):
@@ -16,8 +25,7 @@ class MultiApp:
     def run(self):
         choice = st.sidebar.selectbox(
             'Go to',
-            [app['title'] for app in self.apps],
-            format_func=lambda app: app
+            [app['title'] for app in self.apps]
         )
 
         for app in self.apps:
@@ -32,6 +40,8 @@ class MultiApp:
         - **Roadmap Generator**: 🗺️ Get a personalized learning roadmap to guide you through the skills and knowledge you need.
         - **Resume Analyzer**: 📄 Upload your resume and get instant feedback to improve it.
         - **ATS Checker**: 🎯 Check how well your resume matches the job description and optimize it for Applicant Tracking Systems (ATS).
+        - **HR Chatbot**: 🤖 Practice HR interview questions with a smart, interactive chatbot.
+        - **Tech Assistant**: 🛠️ Dive deep into technical interview questions and coding scenarios to sharpen your skills.
         
         🌟 Select an option from the sidebar to get started on your path to career success!
         ''')
@@ -43,5 +53,7 @@ st.sidebar.title('Navigation')
 app.add_app("Roadmap Generator", roadmap.main)
 app.add_app("Resume Analyzer", resume.main)
 app.add_app("ATS Checker", ats.main)
+app.add_app("HR Chatbot", interview.main)
+app.add_app("Tech Assistant", tech.main)
 
 app.run()
