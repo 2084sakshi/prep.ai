@@ -36,7 +36,7 @@ def get_technical_questions(role, company, additional_info=None, desired_questio
         return []
 
     # Debugging: Print the raw response for inspection
-    #print("Raw API Response (General Questions):\n", response.text)
+    print("Raw API Response (General Questions):\n", response.text)
 
     # Initialize questions list
     questions = []

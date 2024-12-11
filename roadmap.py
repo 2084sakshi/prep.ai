@@ -71,9 +71,12 @@ def generate_pdf(content):
             pdf.chapter_body(line.strip())
 
     buffer = BytesIO()
-    pdf.output(buffer)
+    pdf.output(dest='S').encode('latin1')  # Output the PDF content as a string
+
+    # Reset the buffer position and return it
+    buffer.write(pdf.output(dest='S').encode('latin1'))
     buffer.seek(0)
-    return buffer.getvalue()
+    return buffer
 def main():
     st.title("Roadmap Generator 🛣️")
     st.write("GENERATE A ROADMAP FOR YOUR CAREER !")
@@ -176,7 +179,7 @@ def main():
                 st.download_button(
                     label='Download PDF',
                     data=pdf_buffer,
-                    file_name=f"{input.replace(' ', '_')}_roadmap.pdf",
+                    file_name = f"{input.replace(' ', '_')}_roadmap.pdf",
                     mime='application/pdf'
                 )
             except Exception as e:
