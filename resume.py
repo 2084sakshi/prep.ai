@@ -62,7 +62,7 @@ def get_converse():
         Context:\n {context}\n
         Answer: """
         
-        modele = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
+        modele = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.6)
         prompt = PromptTemplate(template=prompttemplate, input_variables=["context"])
         chain = load_qa_chain(llm=modele, prompt=prompt, chain_type="stuff")
 

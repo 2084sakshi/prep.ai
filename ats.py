@@ -1,9 +1,14 @@
-
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import streamlit as st
 from PyPDF2 import PdfReader
+from langchain_community.vectorstores.faiss import FAISS
+from langchain.chains.question_answering import load_qa_chain
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.llms import OpenAI
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -12,6 +17,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel("gemini-pro")
 
+# Extract raw text from PDF
 def get_rawtext(uploaded_file):
     """Extract text from uploaded PDF file."""
     text = ""
@@ -26,52 +32,65 @@ def get_rawtext(uploaded_file):
         return None
     return text
 
+# Semantic search setup using FAISS
+def create_faiss_index(resume_text, job_description):
+    """Create a FAISS index from resume and job description."""
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+    # Split text into chunks
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    resume_chunks = splitter.split_text(resume_text)
+    job_desc_chunks = splitter.split_text(job_description)
+
+    docs = resume_chunks + job_desc_chunks
+    # Create FAISS index using the embeddings model
+    vectorstore = FAISS.from_texts(texts=docs, embedding=embeddings)
+    return vectorstore
+
+# Query the FAISS index
+def query_faiss_index(vectorstore, question):
+    """Query the FAISS index with a specific question."""
+    retriever = vectorstore.as_retriever()
+    results = retriever.get_relevant_documents(question)
+    return results
+
+# Enhanced ATS check function
 def ats_check(resume_text, job_role, desc):
     """Generate ATS analysis based on resume text, job role, and job description."""
+    vectorstore = create_faiss_index(resume_text, desc)
+
+    # Semantic search for matching skills
+    relevant_skills = query_faiss_index(vectorstore, f"What skills are relevant for a {job_role}?")
+    extracted_skills = "\n".join([res.page_content for res in relevant_skills])
+
     prompt = f"""
-    **Act as a professional Applicant Tracking System (ATS) resume analyzer with expertise in tech roles, software development, and tech consulting.** 
+    You are a professional ATS (Applicant Tracking System) resume analyzer, specializing in matching resumes with job descriptions. Analyze the following resume for the job role , and provide a detailed and accurate analysis with specific recommendations for optimization.
 
-    **Analyze the following resume for the job role of {job_role} based on the provided job description.**
+    **Job Role**: {job_role}
 
-    **Resume Text:**
+    **Resume Text**: 
     {resume_text}
 
-    **Job Description:**
+    **Job Description**:
     {desc}
 
-    **Please provide the following output information:**
+    **Relevant Skills Extracted from Resume**:
+    {extracted_skills}
 
-    1. **ATS Compatibility Score:**
-    - Provide a percentage score indicating the resume's compatibility with various ATS.
-    - Explain the factors affecting the score (e.g., formatting, keywords).
-    - Indicate whether the resume is likely to pass or fail ATS screening based on the score.
-
-    2. **Keyword Analysis:**
-    - Identify skills and experience mentioned in the resume that are relevant to the job description. Categorize them as "Present" or "Missing" based on the job description.
-    - Explain the importance of each "Present" skill for the job role.
-    - Highlight any particularly relevant skills not explicitly mentioned in the resume but demonstrably possessed based on the experience section (e.g., leadership skills gained through project management).
-    - Provide a list of "Missing" skills that would significantly improve the resume's match with the job description.
-
-    3. **Formatting and Structure Analysis:**
-    - Assess the resume's formatting and structure, including:
-        - Header, footer, and margin optimization.
-        - Use of fonts, headings, and bullets.
-        - Overall readability and ATS compatibility.
-
-    4. **ATS Recommendation Report:**
-    - Provide specific recommendations on how to optimize the resume for ATS compatibility, including:
-        - Adjusting formatting and structure for better parsability.
-        - Adding relevant keywords identified as "Missing" in the analysis.
-        - Highlighting transferable skills that demonstrate the missing keywords.
+    **Instructions**:
+    1. **ATS Compatibility Score**: Provide a numerical score from 0 to 100 representing how well the resume matches the job description in terms of ATS compatibility. 
+    2. **Missing Skills**: List specific skills or keywords from the job description that are missing or insufficiently represented in the resume. Include both technical and soft skills, if applicable.
+    3. **Optimization Suggestions**: Provide **highly specific recommendations** for improving the resume to increase its chances of passing through an ATS. 
+   
     """
+
     response = model.generate_content(prompt)
     return response.text
 
+# Streamlit app setup
 def main():
     st.write("Welcome to the ATS Checker! 🚀")
-    st.write("Upload your resume and provide the job role and description to get valuable insights and optimize your resume for Applicant Tracking Systems (ATS). 💼")
-
-    st.write("Upload your resume and provide the job role and description to get started.")
+    st.write("Upload your resume and provide the job role and description to get valuable insights and optimize your resume for ATS.")
 
     uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"])
     job_role = st.text_input("Enter the job role you are applying for")
