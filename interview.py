@@ -6,6 +6,7 @@ import streamlit as st
 # Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel("gemini-pro")
 
 seed_questions = """
 1. "Tell me about yourself. (General intro, relevant skills)"
@@ -54,7 +55,7 @@ def get_questions(title, years):
     """
     
     # Call Google Gemini API to generate questions
-    response = genai.GenerativeModel("gemini-pro").generate_content(prompt)
+    response = model.generate_content(prompt)
     print("Raw API Response (HR Questions):\n", response.text)
     return response.text.split("\n")
 
@@ -68,7 +69,7 @@ def generate_feedback(job_title, experience):
         feedback_prompt = (
             f"You are an experienced HR interviewer and analyze your response to a behavioral question for {job_title} role with {experience} years of experience. "
             f"Give feedback on the response provided by the interviewee in 4-5 sentences. This feedback will help the interviewee understand their strengths and areas for improvement in future interviews. "
-            f"Also, provide an improved answer which will help the interviewee in the future.\n\n"
+            f"Also, provide an improved answer based on interviwee answer below which will help the interviewee in the future.\n\n"
             f"**Question:** {question}\n\n"
             f"**Your Answer:** {answer}\n\n"
             f"**Feedback:**"
