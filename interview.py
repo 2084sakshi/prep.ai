@@ -1,17 +1,52 @@
-import streamlit as st
 import os
 from dotenv import load_dotenv
 import google.generativeai as genai
+import streamlit as st
 
 # Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel("gemini-pro")
 
-# Function to generate questions
+seed_questions = """
+1. "Tell me about yourself. (General intro, highlight relevant skills & experience)"
+2.Why would you be a good fit for our team? (Team dynamics, collaborative spirit)"
+3. "Describe a time you had to overcome a significant challenge at work. (Problem-solving, resilience)"
+4. "Give an example of when you had to work in a team to achieve a common goal. (Teamwork, collaboration)"
+5. "How do you prioritize tasks when faced with multiple deadlines? (Time management, organization)"
+6. "Tell me about a time you made a mistake. What did you learn from it? (Self-awareness, learning from errors)"
+7. "What are your strengths and how do they apply to this role? (Self-assessment, relevant skills)"
+8. "How do you handle stress and pressure in a professional environment? (Stress management, coping skills)"
+9. "Where do you see your career progressing in the next 5 years? (Career goals, ambition)"
+10. "What do you like to do in your free time? (Personality, cultural fit, well-roundedness)"
+11.If a client was upset, how would you handle the situation?( Scenario-based, judgment, communication)"
+"""
+
+# Function to generate HR questions based on seed questions
 def get_questions(title, years):
-    prompt = f"Generate 5 HR interview questions for a {title} with {years} years of experience in the field. (only questions required). Pretend you are talking directly to the interviewee."
-    response = model.generate_content(prompt)
+    prompt = f"""
+    Based on the following examples, generate 5 new HR interview questions for a {title} with {years} years of experience in the field:
+
+    Seed Questions:
+    {seed_questions}
+
+    **Note:** Be highly dependent on the seed bank questions to understand what is considered in the output.
+
+    **Format for Output:** 
+    Please provide exactly 5 questions in the following format:
+    1."Question 1"
+    2. "Question 2"
+    3. "Question 3"
+    4. "Question 4"
+    5. "Question 5"
+    
+    Make sure the questions are formatted as a list of bullet points, with no extra text or explanations.
+
+    Generate 5 new HR interview questions for the specified role and experience level:
+    """
+    
+    # Call Google Gemini API to generate questions
+    response = genai.GenerativeModel("gemini-pro").generate_content(prompt)
+    print("Raw API Response (HR Questions):\n", response.text)
     return response.text.split("\n")
 
 # Function to generate feedback and improved answers
@@ -21,13 +56,16 @@ def generate_feedback(job_title, experience):
         question = response['question']
         answer = response.get('text', "No answer provided.")
         
-        prompt = (
-            f"You are an experienced HR interviewer and analyze your response to a behavioral question for {job_title} role with {experience} years of experience. Give feedback on the response provided by the interviewee in 4-5 sentences. This feedback will help the interviewee understand their strengths and areas for improvement in future interviews. Also, provide an improved answer which will help the interviewee in the future.\n\n"
+        feedback_prompt = (
+            f"You are an experienced HR interviewer and analyze your response to a behavioral question for {job_title} role with {experience} years of experience. "
+            f"Give feedback on the response provided by the interviewee in 4-5 sentences. This feedback will help the interviewee understand their strengths and areas for improvement in future interviews. "
+            f"Also, provide an improved answer which will help the interviewee in the future.\n\n"
             f"**Question:** {question}\n\n"
             f"**Your Answer:** {answer}\n\n"
             f"**Feedback:**"
         )
-        feedback_response = model.generate_content(prompt)
+
+        feedback_response = genai.GenerativeModel("gemini-pro").generate_content(feedback_prompt)
         feedback_text += f"Question {i + 1}: {question}\n\n"
         feedback_text += feedback_response.text + "\n\n\n"
     return feedback_text
