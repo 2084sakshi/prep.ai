@@ -32,9 +32,8 @@ def ats_check_ai_based(resume_text, job_role, desc):
     """Generate ATS analysis based on resume text, job role, and job description using generative AI."""
     # Prepare generative AI prompt based on resume and job description
     prompt = f"""
-    You are a professional ATS (Applicant Tracking System) resume analyzer, specializing in matching resumes with job descriptions.
-
-    Analyze the following resume for the specified job role and provide a detailed analysis of the resume's compatibility with the job description.
+    You are an expert in Applicant Tracking System (ATS) resume analysis, specializing in evaluating resumes against job descriptions.
+    Please analyze the following resume for the specified job role and provide a comprehensive assessment of its compatibility with the job description.
 
     **Job Role**: {job_role}
 
@@ -45,9 +44,9 @@ def ats_check_ai_based(resume_text, job_role, desc):
     {desc}
 
     **Instructions**:
-    1. **ATS Compatibility Score**: Provide a numerical score from 0 to 100 representing how well the resume matches the job description in terms of ATS compatibility.
-    2. **Missing Skills**: Identify and list the skills that are missing from the resume compared to the job description.
-    3. **Optimization Suggestions**: Provide **highly specific recommendations** for improving the resume by addressing the missing skills and aligning the content with job requirements to increase ATS compatibility.
+    1. **ATS Compatibility Score**: Assign a numerical score from 0 to 100 indicating the resume's compatibility with the job description based on ATS criteria.
+    2. **Missing Skills**: Identify and list any skills that are required by the job description but are not present in the resume.
+    3. **Optimization Suggestions**: Provide detailed and specific recommendations for improving the resume. Focus on addressing the missing skills and aligning the resume content with the job requirements to enhance ATS compatibility.
     """
 
     # Get the response from the AI model
