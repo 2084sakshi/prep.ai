@@ -5,6 +5,7 @@ import ats
 import tech
 import interview
 
+#py -m streamlit run main.py
 # Set page configuration at the very beginning
 st.set_page_config(
     page_title="prep.ai",

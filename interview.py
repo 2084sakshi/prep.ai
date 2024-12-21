@@ -34,25 +34,26 @@ seed_questions = """
 # Function to generate HR questions based on seed questions
 def get_questions(title, years):
     prompt = f"""
-    Based on the following examples, generate 5 new HR interview questions for a {title} with {years} years of experience in the field:
+Based on the following examples, generate 5 new HR interview questions for a {title} with {years} years of experience in the field:
 
-    Seed Questions:
-    {seed_questions}
+Seed Questions:
+{seed_questions}
 
-    **Note:** Be highly dependent on the seed bank questions to understand what is considered in the output.
+**Note:** Be highly dependent on the seed bank questions to understand what is considered in the output.
 
-    **Format for Output:** 
-    Please provide exactly 5 questions in the following format:
-    1."Question 1"
-    2. "Question 2"
-    3. "Question 3"
-    4. "Question 4"
-    5. "Question 5"
-    
-    Make sure the questions are formatted as a list of bullet points, with no extra text or explanations.
+**Format for Output:**
+Please provide exactly 5 questions in the following format:
+1. "Tell me about yourself."
+2. "Question 2"
+3. "Question 3"
+4. "Question 4"
+5. "Question 5"
 
-    Generate 5 new HR interview questions for the specified role and experience level:
-    """
+Make sure the questions are formatted as a list, with no extra text or explanations. The first question should always be "Tell me about yourself."
+
+Generate 5 new HR interview questions for the specified role and experience level:
+"""
+
     
     # Call Google Gemini API to generate questions
     response = model.generate_content(prompt)

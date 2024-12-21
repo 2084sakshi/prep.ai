@@ -168,7 +168,7 @@ def main():
             st.session_state["questions"] = questions
             st.session_state["responses"] = []  
             st.session_state["question_no"] = 0  # Initialize question index
-            st.experimental_rerun()  # Refresh to display the first question
+            st.rerun()  # Refresh to display the first question
         else:
             st.error("Failed to retrieve questions. Please try again.")
 
