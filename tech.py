@@ -1,104 +1,110 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
+import json
 import google.generativeai as genai
+import re
 
 # Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel("gemini-pro")
-def get_technical_questions(role, company, additional_info=None, desired_questions=12):
+
+'''
+def sanitize_output(text):
+    # Escape backslashes
+    sanitized = text.replace("\\", "\\\\")    
+    # Remove newlines, carriage returns, and any unwanted whitespace in ASCII art or other multiline content
+    sanitized = sanitized.replace("\n", " ").replace("\r", "")  # Remove newlines and carriage returns   
+    # Remove non-JSON control characters (ASCII 0-31, 127)
+    sanitized = re.sub(r'[\x00-\x1F\x7F]', '', sanitized)    
+    # Replace multiple spaces with a single space
+    sanitized = re.sub(r'\s+', ' ', sanitized)  
+    sanitized = sanitized.replace("'", '"')
+    # Escape double quotes
+    sanitized = sanitized.replace('"', '\\"')    
+    return sanitized
+'''
+
+
+import json
+import streamlit as st
+
+def generate_questions(topic, difficulty, num_questions=10):
     prompt = f"""
-    Generate {desired_questions} concise technical interview questions for a {role} position at {company}, each with 4 multiple-choice options.
-    1. Direct Knowledge Questions - Test basic knowledge with single-word or simple answers.
-    2. Scenario-Based Questions - Present a scenario requiring application of knowledge to solve it.
-    3. Problem-Solving Questions - Pose a problem or challenge to assess problem-solving skills.
-    4. other - Ask questions that are relevant to the role and company and test the candidate's understanding of the domain.
+    You are an expert question generator for technical interviews. Generate exactly {num_questions} questions on the topic "{topic}" at the "{difficulty}" difficulty level.
 
-    Each question should be followed by 4 options, and the correct answer should be clearly specified as the full answer text, not just the letter.
-    The format should be as follows:
-    Question: <question>
-    a) <option 1>
-    b) <option 2>
-    c) <option 3>
-    d) <option 4>
-    Correct Answer: <correct answer text>
+    Each question should:
+    1. Cover fundamental to advanced concepts within the topic.
+    2. Be a mix of multiple-choice, code interpretation, problem-solving, and practical applications.
+    3. Include clear options ("a" to "d") and an explanation for the correct answer.
+    4. Balance difficulty: 3-4 basic, 3-4 intermediate, and 2-3 advanced questions.
+    5. Focus on key concepts like data structures, algorithms, and practical applications.
 
-    Please ensure that the questions are brief and directly relevant to the {role} at {company}.
-    Consider {additional_info} for aligning questions with specific interview expectations.
+    Each question must include:
+    - A concise question text.
+    - Four multiple-choice options labeled "a", "b", "c", "d".
+    - The correct answer identified by the full text of the option.
+    - A brief explanation for why the correct answer is correct.
+
+    ### Format Specification:
+    Return ONLY a valid JSON array with the following structure. Do NOT include any text before or after the JSON array. Do NOT add explanations, preambles, or formatting notes. Return only valid array. JSON format:
+    [
+        {{
+            "question": "<question_text>",
+            "options": {{
+                "a": "<option_1>",
+                "b": "<option_2>",
+                "c": "<option_3>",
+                "d": "<option_4>"
+            }},
+            "correct_answer": "<correct_option_text>",  # where correct_option_text is 'a: option_1', 'b: option_2', etc.
+            "explanation": "<brief_explanation>"
+        }},
+        ...
+    ]
     """
 
-    # Generate response
     try:
-        response = model.generate_content(prompt)
+        response = model.generate_content(prompt)  # Replace with your API call method
+        print("Raw response: ",response.text)
+        # Directly convert response to JSON
+        if hasattr(response, "content"):
+            questions = json.loads(response.content)
+        elif hasattr(response, "text"):
+            questions = json.loads(response.text)
+        else:
+            questions = json.loads(str(response))  # Fallback for string representation
+
+        return questions
     except Exception as e:
-        st.error(f"An error occurred while generating general questions: {e}")
+        st.error(f"Error generating or parsing questions: {e}")
         return []
 
-    # Debugging: Print the raw response for inspection
-    print("Raw API Response (General Questions):\n", response.text)
 
-    # Initialize questions list
-    questions = []
-    
-    # Split by double newlines to get question blocks
-    blocks = response.text.strip().split("\n\n")
-
-    for block in blocks:
-        lines = block.strip().split("\n")
-        
-        if len(lines) < 6:  # We expect at least 6 lines: question + 4 options + correct answer
-            print("Malformed question block, skipping:\n", block)
-            continue
-
-        # Extract the question (first line) and options (next four lines)
-        question_line = lines[0].strip()
-        options = [line.strip() for line in lines[1:5]]  # The next four lines should be options
-        correct_answer_line = lines[5].strip()
-        
-        # Check for the correct format and assign question and answer
-        question_text = question_line
-        if "Question:" in question_line:
-            question_text = question_line.split("Question: ", 1)[1].strip()
-
-        # Validate the options and correct answer format
-        if len(options) != 4 or not correct_answer_line.startswith("Correct Answer:"):
-            print("Malformed question block, skipping:\n", block)
-            continue
-        
-        correct_answer_text = correct_answer_line.split("Correct Answer: ", 1)[1].strip()
-
-        questions.append({
-            "question": question_text,
-            "options": options,
-            "correct_answer": correct_answer_text
-        })
-
-    return questions
 
 def display_question():
-    # Ensure question_no is within the bounds of the questions list
     question_no = st.session_state.question_no
     questions = st.session_state.questions
-    
-    # Check if questions have been properly stored
-    if not isinstance(questions, list) or not all(isinstance(q, dict) for q in questions):
-        st.error("Questions data is not properly formatted. Please check the question generation.")
+
+    # Ensure we have valid questions loaded
+    if not isinstance(questions, list) or not all("question" in q and "options" in q for q in questions):
+        st.error("Questions are not properly formatted. Please check the generation step.")
         return
 
     # Access current question data
-    question_data = questions[question_no]  # This should be a dictionary
+    question_data = questions[question_no]
 
     # Display the question text
     st.write(f"**Question {question_no + 1}:** {question_data['question']}")
-    
+
     # Display the options as radio buttons
     selected_option = st.radio(
         "Select an option:",
-        options=question_data["options"],
+        options=list(question_data["options"].values()),
         key=f"selected_option_{question_no}"
     )
-    
+
     # Submit button to record answer
     if st.button("Submit Answer", key=f"submit_{question_no}"):
         if selected_option:
@@ -106,92 +112,92 @@ def display_question():
             st.session_state.responses.append({
                 "question": question_data["question"],
                 "selected_option": selected_option,
-                "correct_answer": question_data["correct_answer"]
+                "correct_answer": question_data["correct_answer"],
+                "explanation": question_data["explanation"]
             })
             st.session_state.question_no += 1
             st.rerun()  # Rerun to show the next question
         else:
             st.warning("Please select an option before submitting.")
 
+
 def generate_feedback(responses):
     total_questions = len(responses)
-    correct_answers = 0  # Initialize correct answers counter
-    detailed_feedback = []  # For detailed feedback per question
+    correct_answers = 0
+    detailed_feedback = []
 
     for response in responses:
         feedback_entry = {}
         feedback_entry["question"] = response["question"]
         feedback_entry["selected_option"] = response["selected_option"]
         feedback_entry["correct_answer"] = response["correct_answer"]
-        
-        # Remove any leading letter option (e.g., "a) ") for comparison
-        selected_core_text = response["selected_option"].split(")", 1)[-1].strip()
-        correct_core_text = response["correct_answer"].split(")", 1)[-1].strip()
-        
-        # Compare core texts for correctness
-        if selected_core_text == correct_core_text:
+        feedback_entry["explanation"] = response["explanation"]
+
+        # Extract the answer text from the correct answer (e.g., "a: SELECT" -> "SELECT")
+        correct_answer_text = response["correct_answer"].split(":")[1].strip()
+
+        # Compare the selected answer with the correct answer text
+        if response["selected_option"] == correct_answer_text:
             feedback_entry["feedback"] = "✅ Correct! Well done!"
-            correct_answers += 1  # Increment correct answers counter
+            correct_answers += 1
         else:
-            feedback_entry["feedback"] = f"❌ Incorrect! The correct answer is: **{response['correct_answer']}**"
+            # Format the correct answer with its option
+            correct_option = response["correct_answer"].split(":")[0]  # Extract the option letter (e.g., 'a', 'b', etc.)
+            feedback_entry["feedback"] = f"❌ Incorrect! The correct answer is: **{correct_option}: {correct_answer_text}**"
 
         detailed_feedback.append(feedback_entry)
 
-    # Prepare overall performance summary
-    performance_summary = []
-    performance_summary.append(f"You answered **{total_questions}** questions in total.")
-    performance_summary.append(f"You got **{correct_answers}** correct and **{total_questions - correct_answers}** incorrect.")
-    
+    # Display overall performance summary
+    st.write("### Performance Summary")
+    st.write(f"- Total Questions: **{total_questions}**")
+    st.write(f"- Correct Answers: **{correct_answers}**")
+    st.write(f"- Incorrect Answers: **{total_questions - correct_answers}**")
     if total_questions > 0:
         accuracy = correct_answers / total_questions
-        performance_summary.append(f"Your accuracy is **{accuracy:.2%}**.")
-        if accuracy < 0.6:  # Example threshold
-            performance_summary.append("Consider reviewing the topics covered in the questions.")
+        st.write(f"- Accuracy: **{accuracy:.2%}**")
+        if accuracy < 0.6:
+            st.warning("Consider reviewing the topics covered in the questions.")
 
-    return detailed_feedback, performance_summary
+    # Display detailed feedback for each question
+    st.write("### Detailed Feedback")
+    for feedback in detailed_feedback:
+        st.write(f"**Question:** {feedback['question']}")
+        st.write(f"- Selected Answer: {feedback['selected_option']}")
+        st.write(f"- Correct Answer: {feedback['correct_answer']}")
+        st.write(f"- Explanation: {feedback['explanation']}")
+        st.write(feedback["feedback"])
+
 
 def main():
     st.title("🧑‍💻 Technical Interview Assistant")
-    st.subheader("Ready to tackle your interview? Let’s begin!")
+    st.subheader("Generate and answer technical questions tailored to your needs!")
 
-    # Input Section for Company, Role, and Additional Info
-    company = st.text_input("🏢 Enter the Company Name")
-    role = st.text_input("💼 Enter the Job Role")
-    additional_info = st.text_area("💡 Enter any additional info about the role or interview focus")
-    start = st.button("🚀 Start Interview")
+    # Initialize session state
+    if "questions" not in st.session_state:
+        st.session_state.questions = []
+    if "responses" not in st.session_state:
+        st.session_state.responses = []
+    if "question_no" not in st.session_state:
+        st.session_state.question_no = 0
 
-    # Initialize questions and reset session state on button click
-    if start and company and role:
-        questions = get_technical_questions(role, company, additional_info)  # Make sure this function is defined elsewhere
+    topic = st.text_input("📚 Enter the Topic")
+    difficulty = st.selectbox("🎯 Select Difficulty Level", ["Easy", "Medium", "Hard"])
+    start = st.button("Generate Questions")
 
-        if questions:  # Check if questions were retrieved successfully
-            st.session_state["questions"] = questions
-            st.session_state["responses"] = []  
-            st.session_state["question_no"] = 0  # Initialize question index
-            st.rerun()  # Refresh to display the first question
+    if start and topic and difficulty:
+        questions = generate_questions(topic, difficulty)
+        if questions:
+            st.session_state.questions = questions
+            st.session_state.responses = []
+            st.session_state.question_no = 0
+            st.rerun()
         else:
-            st.error("Failed to retrieve questions. Please try again.")
+            st.error("No questions generated. Please try again.")
 
-    # Display questions if they have been initialized
-    if "questions" in st.session_state:
-        if st.session_state.question_no < len(st.session_state.questions):
-            display_question()
-        else:
-            st.write("Thank you for your responses!")
-            
-            # Generate feedback for all collected responses
-            detailed_feedback, performance_summary = generate_feedback(st.session_state.responses)
-
-            # Display detailed feedback for each question
-            for entry in detailed_feedback:
-                st.write(f"**Question:** {entry['question']}")
-                st.write(f"**Your Answer:** {entry['selected_option']}")
-                st.write(entry["feedback"])
-                st.write("---")  # Separator for readability
-            
-            # Display overall performance summary
-            for line in performance_summary:
-                st.write(line)
+    if "questions" in st.session_state and st.session_state.question_no < len(st.session_state.questions):
+        display_question()
+    elif "responses" in st.session_state and st.session_state.question_no >= len(st.session_state.questions):
+        generate_feedback(st.session_state.responses)
 
 
 if __name__ == "__main__":
