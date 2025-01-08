@@ -4,7 +4,10 @@
 
 ## Demo  
 
-[Click to view the demo!](https://github.com/2084sakshi/prep.ai/assets/111236076/2a310859-e661-47c1-8504-88075e2857e6)  
+[Click to view the demo!]
+
+https://github.com/user-attachments/assets/d3d95da5-d255-4383-b935-d43fe704895a
+
 
 ## Features  
 
